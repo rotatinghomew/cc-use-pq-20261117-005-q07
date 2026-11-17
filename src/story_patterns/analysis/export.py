@@ -39,7 +39,7 @@ def export_csv(report: dict, path: str | Path, overwrite: bool = False) -> Path:
     from io import StringIO
 
     buffer = StringIO(newline="")
-    columns = ["story_id", "revision", "title", "tradition", "pattern", "pattern_status",
+    columns = ["story_id", "revision", "branch", "title", "tradition", "pattern", "pattern_status",
                "youngest_outcome", "outcome_status", "final_pattern", "final_outcome",
                "resolution", "adjudication_id", "reviewer_count"]
     writer = csv.DictWriter(buffer, fieldnames=columns, extrasaction="ignore", lineterminator="\n")

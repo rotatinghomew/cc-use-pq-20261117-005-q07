@@ -3,10 +3,14 @@ from __future__ import annotations
 from story_patterns.errors import AnalysisError
 
 
-def select_cohort(stories: list[dict], tradition: str | None) -> list[dict]:
+def select_cohort(stories: list[dict], tradition: str | None, branch: str | None = None) -> list[dict]:
     if tradition is not None and (not isinstance(tradition, str) or not tradition.strip()):
         raise AnalysisError("tradition filter must be a non-empty label or omitted")
-    selected = [story for story in stories if tradition is None or story["tradition"] == tradition]
+    if branch is not None and (not isinstance(branch, str) or not branch.strip()):
+        raise AnalysisError("branch filter must be a non-empty label or omitted")
+    selected = [story for story in stories
+                if (tradition is None or story["tradition"] == tradition)
+                and (branch is None or story["branch"] == branch.strip())]
     return sorted(selected, key=lambda story: (story["story_id"], story["revision"]))
 
 

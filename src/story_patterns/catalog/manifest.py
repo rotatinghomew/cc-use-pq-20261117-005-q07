@@ -12,6 +12,7 @@ def build_manifest(batches: list[dict], stories: list[dict]) -> dict:
         "batches": sorted(batches, key=lambda item: item["batch_id"]),
         "story_revisions": [
             {"story_id": item["story_id"], "revision": item["revision"],
+             "branch": item["branch"],
              "source_reference": item["source"]["reference"], "source_kind": item["source"]["kind"]}
             for item in sorted(stories, key=lambda value: (value["story_id"], value["revision"]))
         ],

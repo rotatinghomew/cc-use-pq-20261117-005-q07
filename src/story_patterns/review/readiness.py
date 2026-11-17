@@ -26,7 +26,8 @@ def build_review_queue(stories: list[dict], decisions: dict, minimum: int, adjud
         else:
             status = "ready"
         queue.append({
-            "story_id": story["story_id"], "revision": story["revision"], "title": story["title"],
+            "story_id": story["story_id"], "revision": story["revision"], "branch": story["branch"],
+            "title": story["title"],
             "tradition": story["tradition"], "status": status, "reviewer_count": len(votes),
             "pattern": pattern, "outcome": outcome, "missing_evidence_event_ids": missing_evidence,
             "reviewer_names": sorted(item["annotator"] for item in votes),

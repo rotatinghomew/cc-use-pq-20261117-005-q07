@@ -39,10 +39,12 @@ def parser() -> argparse.ArgumentParser:
     report = commands.add_parser("report", help="compute consensus with explicit coverage")
     report.add_argument("--database", required=True)
     report.add_argument("--tradition")
+    report.add_argument("--branch")
     report.add_argument("--minimum-reviewers", type=int, default=2)
     queue = commands.add_parser("queue", help="show stories needing review or evidence")
     queue.add_argument("--database", required=True)
     queue.add_argument("--tradition")
+    queue.add_argument("--branch")
     queue.add_argument("--minimum-reviewers", type=int, default=2)
     exporter = commands.add_parser("export", help="export a saved report as JSON or CSV")
     exporter.add_argument("--database", required=True)
@@ -57,18 +59,26 @@ def parser() -> argparse.ArgumentParser:
     preview.add_argument("--format", choices=("json", "ndjson"), required=True)
     compare = commands.add_parser("compare", help="compare tradition cohorts descriptively")
     compare.add_argument("--database", required=True)
+    compare.add_argument("--branch")
     compare.add_argument("--minimum-reviewers", type=int, default=2)
     lineage = commands.add_parser("lineage", help="show available story revisions")
     lineage.add_argument("--database", required=True)
+    branches = commands.add_parser("branches", help="show branch structure, merges, and lifecycle marks")
+    branches.add_argument("--database", required=True)
+    branches.add_argument("--story-id")
+    marker = commands.add_parser("mark-branch", help="record an auditable merged or retired branch mark")
+    marker.add_argument("--database", required=True)
+    marker.add_argument("--file", required=True)
     manifest = commands.add_parser("manifest", help="summarize imported batches and source references")
     manifest.add_argument("--database", required=True)
     search = commands.add_parser("search", help="find stories by narrative evidence and cohort labels")
     search.add_argument("--database", required=True)
     search.add_argument("--text")
     search.add_argument("--tradition")
+    search.add_argument("--branch")
     search.add_argument("--source-kind", choices=("book", "oral_record", "local_synthetic"))
     search.add_argument("--sibling-order", type=int)
-    search.add_argument("--revision-policy", choices=("all", "latest"), default="all")
+    search.add_argument("--revision-policy", choices=("all", "latest", "tips"), default="all")
     demo = commands.add_parser("demo", help="replay the bundled synthetic workflow")
     demo.add_argument("--database", required=True)
     demo.add_argument("--fixture", required=True)
@@ -91,9 +101,9 @@ def execute(arguments: argparse.Namespace) -> dict:
     if arguments.command == "history":
         return app.review_history(arguments.story_id, arguments.revision)
     if arguments.command == "report":
-        return app.create_report(arguments.tradition, arguments.minimum_reviewers)
+        return app.create_report(arguments.tradition, arguments.minimum_reviewers, arguments.branch)
     if arguments.command == "queue":
-        return app.review_queue(arguments.minimum_reviewers, arguments.tradition)
+        return app.review_queue(arguments.minimum_reviewers, arguments.tradition, arguments.branch)
     if arguments.command == "export":
         report = app.stored_report(arguments.report_id)
         if report is None:
@@ -112,20 +122,34 @@ def execute(arguments: argparse.Namespace) -> dict:
         rows = read_story_file(arguments.file, arguments.format)
         return app.preview_stories(rows)
     if arguments.command == "compare":
-        return app.compare_traditions(arguments.minimum_reviewers)
+        return app.compare_traditions(arguments.minimum_reviewers, arguments.branch)
     if arguments.command == "lineage":
         return {"stories": app.revision_lineage()}
+    if arguments.command == "branches":
+        return {"stories": app.branch_overview(arguments.story_id)}
+    if arguments.command == "mark-branch":
+        return app.record_branch_mark(read_json(arguments.file))
     if arguments.command == "manifest":
         return app.catalog_manifest()
     if arguments.command == "search":
         return app.search_stories(text=arguments.text, tradition=arguments.tradition,
                                   source_kind=arguments.source_kind, sibling_order=arguments.sibling_order,
-                                  revision_policy=arguments.revision_policy)
+                                  branch=arguments.branch, revision_policy=arguments.revision_policy)
     fixture = read_json(arguments.fixture)
-    imported = app.import_batch(fixture["batch"])
-    decisions = [app.record_decision(item) for item in fixture["decisions"]]
-    report = app.create_report(fixture.get("tradition"), fixture.get("minimum_reviewers", 2))
-    return {"import": imported, "decisions_recorded": len(decisions), "report": report}
+    batches = fixture.get("batches") or [fixture["batch"]]
+    imports = [app.import_batch(item) for item in batches]
+    retry_import = app.import_batch(batches[0])
+    decisions = [app.record_decision(item) for item in fixture.get("decisions", [])]
+    retry_decision = (app.record_decision(fixture["decisions"][0])
+                      if fixture.get("decisions") else None)
+    adjudications = [app.record_adjudication(item) for item in fixture.get("adjudications", [])]
+    marks = [app.record_branch_mark(item) for item in fixture.get("branch_marks", [])]
+    report = app.create_report(fixture.get("tradition"), fixture.get("minimum_reviewers", 2),
+                               fixture.get("branch"))
+    return {"imports": imports, "decisions_recorded": len(decisions),
+            "adjudications_recorded": len(adjudications), "branch_marks": marks,
+            "retry_checks": {"import": retry_import, "decision": retry_decision},
+            "branches": app.branch_overview(), "report": report}
 
 
 def main(argv: list[str] | None = None) -> int:

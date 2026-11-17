@@ -27,6 +27,21 @@ def _text(value: Any, field: str, limit: int = 500) -> str:
     return value
 
 
+def normalize_parents(raw: Any, revision: int) -> list[int]:
+    if not isinstance(raw, list):
+        raise ValidationError("parents must be a list of earlier revision numbers")
+    parents = []
+    for item in raw:
+        if type(item) is not int or item < 1:
+            raise ValidationError("parents must be positive integers")
+        if item >= revision:
+            raise ValidationError("parents must refer to earlier revisions of the same story")
+        parents.append(item)
+    if len(set(parents)) != len(parents):
+        raise ValidationError("parents cannot repeat")
+    return sorted(parents)
+
+
 def normalize_story(raw: Any) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise ValidationError("each story must be an object")
@@ -36,6 +51,7 @@ def normalize_story(raw: Any) -> dict[str, Any]:
     revision = raw.get("revision")
     if type(revision) is not int or revision < 1:
         raise ValidationError("revision must be a positive integer")
+    branch = _text(raw.get("branch", "main"), "branch", 60)
     source = raw.get("source")
     if not isinstance(source, dict):
         raise ValidationError("source must be an object")
@@ -95,15 +111,19 @@ def normalize_story(raw: Any) -> dict[str, Any]:
         })
     if sorted(sequences) != list(range(1, len(events) + 1)):
         raise ValidationError("event sequences must be contiguous and start at one")
-    return {
+    normalized = {
         "story_id": story_id,
         "revision": revision,
+        "branch": branch,
         "title": title,
         "tradition": tradition,
         "source": {"reference": source_ref, "kind": source_kind},
         "characters": sorted(normalized_characters, key=lambda item: item["sibling_order"]),
         "events": sorted(normalized_events, key=lambda item: item["sequence"]),
     }
+    if raw.get("parents") is not None:
+        normalized["parents"] = normalize_parents(raw.get("parents"), revision)
+    return normalized
 
 
 def normalize_batch(raw: Any) -> tuple[str, list[dict[str, Any]], str]:

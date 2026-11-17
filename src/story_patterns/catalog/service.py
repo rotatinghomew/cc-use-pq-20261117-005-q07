@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from story_patterns.errors import ConflictError
+from story_patterns.errors import ConflictError, ValidationError
 from story_patterns.catalog.validate import canonical_json, normalize_batch
 
 
@@ -10,6 +10,11 @@ class CatalogService:
 
     def import_batch(self, raw: dict) -> dict:
         batch_id, stories, digest = normalize_batch(raw)
+        explicit_parents = {
+            (item["story_id"], item["revision"])
+            for item in raw.get("stories", [])
+            if isinstance(item, dict) and item.get("parents") is not None
+        }
         with self.store.transaction() as connection:
             previous = connection.execute(
                 "SELECT digest, story_count FROM import_batches WHERE batch_id = ?", (batch_id,)
@@ -18,6 +23,7 @@ class CatalogService:
                 if previous["digest"] != digest:
                     raise ConflictError(f"batch {batch_id} already identifies different content")
                 return {"batch_id": batch_id, "status": "already_imported", "story_count": previous["story_count"]}
+            self._check_parents(connection, stories, explicit_parents)
             for story in stories:
                 existing = connection.execute(
                     "SELECT document FROM stories WHERE story_id = ? AND revision = ?",
@@ -41,7 +47,30 @@ class CatalogService:
                     "INSERT INTO batch_stories(batch_id, story_id, revision) VALUES(?,?,?)",
                     (batch_id, story["story_id"], story["revision"]),
                 )
+            self.store._backfill_revision_edges(connection)
         return {"batch_id": batch_id, "status": "imported", "story_count": len(stories)}
+
+    @staticmethod
+    def _check_parents(connection, stories: list[dict], explicit_parents: set) -> None:
+        """显式声明的父修订必须已存在；未声明的线性默认父修订允许缺号，由 lineage 报告。"""
+        incoming = {(story["story_id"], story["revision"]) for story in stories}
+        missing = []
+        for story in stories:
+            identity = (story["story_id"], story["revision"])
+            if identity not in explicit_parents:
+                continue
+            for parent in story.get("parents", []):
+                candidate = (story["story_id"], parent)
+                if candidate in incoming:
+                    continue
+                stored = connection.execute(
+                    "SELECT 1 FROM stories WHERE story_id = ? AND revision = ?", candidate
+                ).fetchone()
+                if stored is None:
+                    missing.append(f"{story['story_id']}@{story['revision']} -> missing parent {parent}")
+        if missing:
+            raise ValidationError("declared parent revisions must exist in the catalog or the same batch: "
+                                  + "; ".join(sorted(missing)))
 
     def get_story(self, story_id: str, revision: int) -> dict | None:
         return self.store.story_document(story_id, revision)
@@ -60,6 +89,22 @@ class CatalogService:
         from story_patterns.catalog.history import revision_lineage
 
         return revision_lineage(self.store.list_stories())
+
+    def branch_overview(self, story_id: str | None = None) -> list[dict]:
+        from story_patterns.catalog.branches import build_branch_overview
+        from story_patterns.errors import NotFoundError
+
+        stories = self.store.list_stories()
+        if story_id is not None:
+            stories = [story for story in stories if story["story_id"] == story_id]
+            if not stories:
+                raise NotFoundError(f"story {story_id!r} was not found")
+        return build_branch_overview(stories, self.store.branch_marks(story_id))
+
+    def record_branch_mark(self, raw: dict) -> dict:
+        from story_patterns.catalog.marks import BranchMarkService
+
+        return BranchMarkService(self.store).record(raw)
 
     def manifest(self) -> dict:
         from story_patterns.catalog.manifest import build_manifest

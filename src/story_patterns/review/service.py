@@ -47,14 +47,16 @@ class ReviewService:
     def decisions_for(self, story_id: str, revision: int) -> list[dict]:
         return self.store.latest_decisions(story_id, revision)
 
-    def queue(self, minimum_reviewers: int = 2, tradition: str | None = None) -> dict:
+    def queue(self, minimum_reviewers: int = 2, tradition: str | None = None,
+              branch: str | None = None) -> dict:
         from story_patterns.analysis.cohorts import select_cohort, validate_minimum
         from story_patterns.review.readiness import build_review_queue, queue_totals
 
         minimum = validate_minimum(minimum_reviewers)
         stories, decisions, _origins, adjudications = self.store.analysis_snapshot(tradition)
-        rows = build_review_queue(select_cohort(stories, tradition), decisions, minimum, adjudications)
-        return {"minimum_reviewers": minimum, "total": len(rows), "by_status": queue_totals(rows), "stories": rows}
+        rows = build_review_queue(select_cohort(stories, tradition, branch), decisions, minimum, adjudications)
+        return {"minimum_reviewers": minimum, "branch": branch, "total": len(rows),
+                "by_status": queue_totals(rows), "stories": rows}
 
     def record_adjudication(self, record: dict) -> dict:
         return self.adjudications.record(record)
@@ -62,12 +64,14 @@ class ReviewService:
     def history(self, story_id: str, revision: int) -> dict:
         from story_patterns.errors import NotFoundError
 
-        if self.store.story_document(story_id, revision) is None:
+        story = self.store.story_document(story_id, revision)
+        if story is None:
             raise NotFoundError(f"story revision {story_id!r}/{revision!r} was not found")
         votes, adjudications = self.store.decision_history(story_id, revision)
         latest_by_reader = {item["annotator"]: item["sequence"] for item in votes}
         for item in votes:
             item["current"] = item["sequence"] == latest_by_reader[item["annotator"]]
-        return {"story_id": story_id, "revision": revision, "decisions": votes,
+        return {"story_id": story_id, "revision": revision, "branch": story["branch"],
+                "decisions": votes,
                 "adjudications": adjudications,
                 "active_adjudication_id": adjudications[-1]["adjudication_id"] if adjudications else None}

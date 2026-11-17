@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 
+from story_patterns.catalog.branches import effective_parents
 from story_patterns.catalog.validate import digest_json, normalize_story
+from story_patterns.catalog.marks import check_mark_against_structure, normalize_branch_mark
 from story_patterns.errors import ValidationError
 from story_patterns.review.adjudication import normalize_adjudication
 from story_patterns.review.validate import normalize_decision
@@ -44,6 +46,44 @@ def audit_catalog(snapshot: dict) -> dict:
     for identity in stories:
         if not origins_by_identity.get(identity):
             issues.append(_issue("story", identity, "story revision has no import-batch provenance"))
+    expected_edges = set()
+    for (story_id, revision), story in stories.items():
+        for parent in effective_parents(story):
+            if (story_id, parent) in stories:
+                expected_edges.add((story_id, revision, parent))
+    recorded_edges = set()
+    for row in snapshot["revision_edges"]:
+        edge = (row["story_id"], row["revision"], row["parent_revision"])
+        recorded_edges.add(edge)
+        if row["parent_revision"] >= row["revision"]:
+            issues.append(_issue("edge", edge, "edge points to a non-earlier revision"))
+        if (row["story_id"], row["revision"]) not in stories:
+            issues.append(_issue("edge", edge, "edge references a missing story revision"))
+        if (row["story_id"], row["parent_revision"]) not in stories:
+            issues.append(_issue("edge", edge, "edge references a missing parent revision"))
+    for edge in sorted(expected_edges - recorded_edges):
+        issues.append(_issue("edge", edge, "document parents have no matching recorded edge"))
+    for edge in sorted(recorded_edges - expected_edges):
+        issues.append(_issue("edge", edge, "recorded edge is not implied by any story document"))
+    versions_by_story = defaultdict(dict)
+    for (story_id, revision), story in stories.items():
+        versions_by_story[story_id][revision] = story
+    for row in snapshot["branch_marks"]:
+        identity = (row["story_id"], row["branch"])
+        try:
+            payload = {key: row[key] for key in ("mark_id", "story_id", "branch", "sequence", "action",
+                                                 "target_branch", "merge_revision", "note", "recorded_by")}
+            normalized = normalize_branch_mark(payload)
+            if digest_json(normalized) != row["digest"]:
+                issues.append(_issue("branch_mark", identity, "stored branch mark digest does not match content"))
+                continue
+            versions = versions_by_story.get(row["story_id"])
+            if not versions:
+                issues.append(_issue("branch_mark", identity, "references a missing story"))
+                continue
+            check_mark_against_structure(normalized, versions)
+        except (ValidationError, TypeError) as error:
+            issues.append(_issue("branch_mark", identity, f"invalid branch mark: {error}"))
     for row in snapshot["decisions"]:
         identity = (row["story_id"], row["story_revision"])
         story = stories.get(identity)
@@ -100,6 +140,8 @@ def audit_catalog(snapshot: dict) -> dict:
     return {"ok": not issues, "story_revisions_checked": len(snapshot["stories"]),
             "batches_checked": len(snapshot["batches"]), "decisions_checked": len(snapshot["decisions"]),
             "batch_links_checked": len(snapshot["batch_stories"]),
+            "edges_checked": len(snapshot["revision_edges"]),
+            "branch_marks_checked": len(snapshot["branch_marks"]),
             "adjudications_checked": len(snapshot["adjudications"]), "reports_checked": len(snapshot["reports"]),
             "issue_count": len(issues), "issues": issues}
 

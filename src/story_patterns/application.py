@@ -19,11 +19,13 @@ class StoryPatternApplication:
     def record_decision(self, decision: dict) -> dict:
         return self.review.record_decision(decision)
 
-    def create_report(self, tradition: str | None = None, minimum_reviewers: int = 2) -> dict:
-        return self.reports.create(tradition, minimum_reviewers)
+    def create_report(self, tradition: str | None = None, minimum_reviewers: int = 2,
+                      branch: str | None = None) -> dict:
+        return self.reports.create(tradition, minimum_reviewers, branch)
 
-    def review_queue(self, minimum_reviewers: int = 2, tradition: str | None = None) -> dict:
-        return self.review.queue(minimum_reviewers, tradition)
+    def review_queue(self, minimum_reviewers: int = 2, tradition: str | None = None,
+                     branch: str | None = None) -> dict:
+        return self.review.queue(minimum_reviewers, tradition, branch)
 
     def stored_report(self, report_id: str) -> dict | None:
         return self.reports.get(report_id)
@@ -34,14 +36,20 @@ class StoryPatternApplication:
     def revision_lineage(self) -> list[dict]:
         return self.catalog.lineage()
 
+    def branch_overview(self, story_id: str | None = None) -> list[dict]:
+        return self.catalog.branch_overview(story_id)
+
+    def record_branch_mark(self, mark: dict) -> dict:
+        return self.catalog.record_branch_mark(mark)
+
     def catalog_manifest(self) -> dict:
         return self.catalog.manifest()
 
     def record_adjudication(self, record: dict) -> dict:
         return self.review.record_adjudication(record)
 
-    def compare_traditions(self, minimum_reviewers: int = 2) -> dict:
-        return self.reports.compare(minimum_reviewers)
+    def compare_traditions(self, minimum_reviewers: int = 2, branch: str | None = None) -> dict:
+        return self.reports.compare(minimum_reviewers, branch)
 
     def search_stories(self, **criteria) -> list[dict]:
         return self.catalog.search(**criteria)

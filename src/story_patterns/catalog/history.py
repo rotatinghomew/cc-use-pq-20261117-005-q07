@@ -1,25 +1,29 @@
 from __future__ import annotations
 
-from collections import defaultdict
+from story_patterns.catalog.branches import group_versions, story_structure
 
 
 def revision_lineage(stories: list[dict]) -> list[dict]:
-    grouped = defaultdict(list)
-    for story in stories:
-        grouped[story["story_id"]].append(story)
+    grouped = group_versions(stories)
     result = []
     for story_id, versions in sorted(grouped.items()):
-        versions.sort(key=lambda item: item["revision"])
-        revision_numbers = [item["revision"] for item in versions]
+        ordered = [versions[revision] for revision in sorted(versions)]
+        revision_numbers = [item["revision"] for item in ordered]
         expected = list(range(1, revision_numbers[-1] + 1))
         missing = sorted(set(expected) - set(revision_numbers))
+        structure = story_structure(versions)
         result.append({
             "story_id": story_id,
-            "revision_count": len(versions),
+            "revision_count": len(ordered),
             "latest_revision": revision_numbers[-1],
             "missing_revision_numbers": missing,
-            "titles_by_revision": [{"revision": item["revision"], "title": item["title"]} for item in versions],
-            "traditions": sorted({item["tradition"] for item in versions}),
+            "titles_by_revision": [{"revision": item["revision"], "title": item["title"],
+                                    "branch": item["branch"]} for item in ordered],
+            "traditions": sorted({item["tradition"] for item in ordered}),
+            "branches": structure["branches"],
+            "roots": structure["roots"],
+            "forks": structure["forks"],
+            "merges": structure["merges"],
         })
     return result
 

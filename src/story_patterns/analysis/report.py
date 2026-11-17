@@ -11,6 +11,7 @@ from story_patterns.analysis.revision_drift import compare_revisions
 from story_patterns.analysis.votes import vote_distribution
 from story_patterns.analysis.sample_profile import build_sample_profile
 from story_patterns.analysis.crosstab import consensus_crosstab
+from story_patterns.catalog.branches import build_branch_overview
 from story_patterns.catalog.history import lineage_warnings, revision_lineage
 from story_patterns.errors import ConflictError
 
@@ -28,7 +29,8 @@ def _consensus(votes: list[str], minimum: int) -> tuple[str | None, str]:
 
 def build_report(stories: list[dict], decisions: dict[tuple[str, int], list[dict]],
                  tradition: str | None, minimum: int, origins: dict | None = None,
-                 adjudications: dict | None = None) -> dict[str, Any]:
+                 adjudications: dict | None = None, branch: str | None = None,
+                 marks: list[dict] | None = None) -> dict[str, Any]:
     pattern_counts: Counter = Counter()
     outcome_counts: Counter = Counter()
     final_pattern_counts: Counter = Counter()
@@ -60,6 +62,7 @@ def build_report(stories: list[dict], decisions: dict[tuple[str, int], list[dict
         used_decisions.extend(item["decision_id"] for item in votes)
         story_results.append({
             "story_id": story["story_id"], "revision": story["revision"],
+            "branch": story["branch"],
             "title": story["title"], "tradition": story["tradition"],
             "pattern": pattern, "pattern_status": pattern_status,
             "youngest_outcome": outcome, "outcome_status": outcome_status,
@@ -71,7 +74,7 @@ def build_report(stories: list[dict], decisions: dict[tuple[str, int], list[dict
             "reviewer_count": len(votes),
         })
     return {
-        "criteria": {"tradition": tradition, "minimum_reviewers": minimum,
+        "criteria": {"tradition": tradition, "branch": branch, "minimum_reviewers": minimum,
                      "unclear_and_unknown_are_abstentions": True},
         "population": {"story_revisions": len(stories), "pattern_consensus": sum(pattern_counts.values()),
                        "outcome_consensus": sum(outcome_counts.values())},
@@ -96,8 +99,10 @@ def build_report(stories: list[dict], decisions: dict[tuple[str, int], list[dict
         "revision_lineage": {"scope": "selected story revisions", "stories": revision_lineage(stories),
                              "warnings": lineage_warnings(revision_lineage(stories))},
         "revision_changes": compare_revisions(stories),
+        "branch_structure": build_branch_overview(stories, marks),
         "provenance": {
             "story_revisions": [f"{item['story_id']}@{item['revision']}" for item in stories],
+            "story_branches": {f"{item['story_id']}@{item['revision']}": item["branch"] for item in stories},
             "decision_ids": sorted(used_decisions),
             "adjudication_ids": sorted(value["adjudication_id"] for value in (adjudications or {}).values() if value),
             "batch_ids_by_story": {
@@ -112,13 +117,15 @@ class ReportService:
     def __init__(self, store):
         self.store = store
 
-    def create(self, tradition: str | None, minimum: int) -> dict:
+    def create(self, tradition: str | None, minimum: int, branch: str | None = None) -> dict:
         from story_patterns.analysis.cohorts import select_cohort, validate_minimum
 
         minimum = validate_minimum(minimum)
         stories, decisions, origins, adjudications = self.store.analysis_snapshot(tradition)
-        stories = select_cohort(stories, tradition)
-        result = build_report(stories, decisions, tradition, minimum, origins, adjudications)
+        stories = select_cohort(stories, tradition, branch)
+        marks = self.store.branch_marks()
+        result = build_report(stories, decisions, tradition, minimum, origins, adjudications,
+                              branch=branch, marks=marks)
         report_id = digest_json(result)[:24]
         request_digest = digest_json({"criteria": result["criteria"], "provenance": result["provenance"]})
         document = canonical_json({"report_id": report_id, **result})
@@ -135,10 +142,10 @@ class ReportService:
     def get(self, report_id: str) -> dict | None:
         return self.store.report_document(report_id)
 
-    def compare(self, minimum: int) -> dict:
+    def compare(self, minimum: int, branch: str | None = None) -> dict:
         from story_patterns.analysis.cohorts import validate_minimum
         from story_patterns.analysis.comparison import compare_traditions
 
         minimum = validate_minimum(minimum)
         stories, decisions, _origins, adjudications = self.store.analysis_snapshot(None)
-        return compare_traditions(stories, decisions, minimum, adjudications)
+        return compare_traditions(stories, decisions, minimum, adjudications, branch=branch)

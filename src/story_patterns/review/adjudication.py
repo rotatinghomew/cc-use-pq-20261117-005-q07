@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from story_patterns.catalog.validate import canonical_json, digest_json, _text
 from story_patterns.errors import ConflictError, NotFoundError, ValidationError
+from story_patterns.review.validate import check_branch_label
 
 
 def normalize_adjudication(raw: dict, story: dict) -> dict:
     if not isinstance(raw, dict):
         raise ValidationError("adjudication must be an object")
+    check_branch_label(raw, story)
     record_id = _text(raw.get("adjudication_id"), "adjudication_id", 120)
     moderator = _text(raw.get("moderator"), "moderator", 120)
     sequence = raw.get("sequence")

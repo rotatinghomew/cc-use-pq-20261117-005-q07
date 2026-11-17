@@ -1,22 +1,28 @@
 from __future__ import annotations
 
+from story_patterns.catalog.branches import effective_parents
 from story_patterns.errors import ValidationError
 
 
 def search_stories(stories: list[dict], text: str | None = None, tradition: str | None = None,
                    source_kind: str | None = None, sibling_order: int | None = None,
-                   revision_policy: str = "all") -> list[dict]:
+                   branch: str | None = None, revision_policy: str = "all") -> list[dict]:
     if text is not None and (not isinstance(text, str) or not text.strip()):
         raise ValidationError("text search must be non-empty when provided")
     if tradition is not None and (not isinstance(tradition, str) or not tradition.strip()):
         raise ValidationError("tradition filter must be non-empty when provided")
+    if branch is not None and (not isinstance(branch, str) or not branch.strip()):
+        raise ValidationError("branch filter must be non-empty when provided")
     if source_kind is not None and source_kind not in {"book", "oral_record", "local_synthetic"}:
         raise ValidationError("source_kind is not supported")
     if sibling_order is not None and (type(sibling_order) is not int or sibling_order < 1):
         raise ValidationError("sibling_order must be a positive integer")
-    if revision_policy not in {"all", "latest"}:
-        raise ValidationError("revision_policy must be all or latest")
+    if revision_policy not in {"all", "latest", "tips"}:
+        raise ValidationError("revision_policy must be all, latest, or tips")
     candidates = stories
+    if branch is not None:
+        branch = branch.strip()
+        candidates = [story for story in candidates if story["branch"] == branch]
     if revision_policy == "latest":
         latest = {}
         for story in candidates:
@@ -24,6 +30,14 @@ def search_stories(stories: list[dict], text: str | None = None, tradition: str 
             if current is None or story["revision"] > current["revision"]:
                 latest[story["story_id"]] = story
         candidates = list(latest.values())
+    elif revision_policy == "tips":
+        tips = {}
+        for story in candidates:
+            key = (story["story_id"], story["branch"])
+            current = tips.get(key)
+            if current is None or story["revision"] > current["revision"]:
+                tips[key] = story
+        candidates = list(tips.values())
     needle = text.casefold().strip() if text else None
     result = []
     for story in candidates:
@@ -43,6 +57,7 @@ def search_stories(stories: list[dict], text: str | None = None, tradition: str 
                            if not needle or any(needle in event[field].casefold()
                                                 for field in ("action", "consequence", "evidence"))]
         result.append({"story_id": story["story_id"], "revision": story["revision"],
+                       "branch": story["branch"], "parents": effective_parents(story),
                        "title": story["title"], "tradition": story["tradition"],
                        "source": story["source"], "matching_event_ids": matching_events})
     return sorted(result, key=lambda item: (item["tradition"], item["story_id"], item["revision"]))

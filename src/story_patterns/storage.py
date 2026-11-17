@@ -30,6 +30,28 @@ CREATE TABLE IF NOT EXISTS batch_stories (
     FOREIGN KEY(story_id, revision) REFERENCES stories(story_id, revision) ON DELETE RESTRICT
 );
 CREATE INDEX IF NOT EXISTS batch_stories_by_story ON batch_stories(story_id, revision, batch_id);
+CREATE TABLE IF NOT EXISTS revision_edges (
+    story_id TEXT NOT NULL,
+    revision INTEGER NOT NULL,
+    parent_revision INTEGER NOT NULL,
+    PRIMARY KEY(story_id, revision, parent_revision),
+    FOREIGN KEY(story_id, revision) REFERENCES stories(story_id, revision) ON DELETE RESTRICT
+);
+CREATE INDEX IF NOT EXISTS revision_edges_by_parent ON revision_edges(story_id, parent_revision);
+CREATE TABLE IF NOT EXISTS branch_marks (
+    mark_id TEXT PRIMARY KEY,
+    story_id TEXT NOT NULL,
+    branch TEXT NOT NULL,
+    sequence INTEGER NOT NULL CHECK(sequence > 0),
+    action TEXT NOT NULL CHECK(action IN ('retired', 'merged')),
+    target_branch TEXT,
+    merge_revision INTEGER,
+    note TEXT NOT NULL,
+    recorded_by TEXT NOT NULL,
+    digest TEXT NOT NULL,
+    UNIQUE(story_id, branch, sequence)
+);
+CREATE INDEX IF NOT EXISTS branch_marks_by_story ON branch_marks(story_id, branch, sequence);
 CREATE TABLE IF NOT EXISTS decisions (
     decision_id TEXT PRIMARY KEY,
     story_id TEXT NOT NULL,
@@ -88,8 +110,26 @@ class StoryStore:
         try:
             connection.execute("PRAGMA journal_mode = WAL")
             connection.executescript(SCHEMA)
+            self._backfill_revision_edges(connection)
         finally:
             connection.close()
+
+    @staticmethod
+    def _backfill_revision_edges(connection: sqlite3.Connection) -> None:
+        """把各修订文档声明（或线性默认）的父修订解析成结构边；只增不改，可安全重放。"""
+        from story_patterns.catalog.branches import effective_parents
+
+        rows = connection.execute("SELECT story_id, revision, document FROM stories").fetchall()
+        known = {(row["story_id"], row["revision"]) for row in rows}
+        for row in rows:
+            document = json.loads(row["document"])
+            for parent in effective_parents(document):
+                if (row["story_id"], parent) not in known:
+                    continue
+                connection.execute(
+                    "INSERT OR IGNORE INTO revision_edges(story_id, revision, parent_revision) VALUES(?,?,?)",
+                    (row["story_id"], row["revision"], parent),
+                )
 
     @contextmanager
     def transaction(self):
@@ -118,6 +158,25 @@ class StoryStore:
                 "SELECT document FROM stories WHERE story_id=? AND revision=?", (story_id, revision)
             ).fetchone()
         return json.loads(row["document"]) if row else None
+
+    def story_versions(self, story_id: str) -> dict[int, dict]:
+        with self.read_connection() as connection:
+            rows = connection.execute(
+                "SELECT document FROM stories WHERE story_id=? ORDER BY revision", (story_id,)
+            ).fetchall()
+        return {item["revision"]: item for item in (json.loads(row["document"]) for row in rows)}
+
+    def branch_marks(self, story_id: str | None = None) -> list[dict]:
+        with self.read_connection() as connection:
+            if story_id is None:
+                rows = connection.execute(
+                    "SELECT * FROM branch_marks ORDER BY story_id, branch, sequence"
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT * FROM branch_marks WHERE story_id=? ORDER BY branch, sequence", (story_id,)
+                ).fetchall()
+        return [dict(row) for row in rows]
 
     def list_stories(self, tradition: str | None = None) -> list[dict]:
         with self.read_connection() as connection:
@@ -230,6 +289,10 @@ class StoryStore:
                 "batches": [dict(row) for row in connection.execute("SELECT * FROM import_batches ORDER BY batch_id")],
                 "batch_stories": [dict(row) for row in connection.execute(
                     "SELECT * FROM batch_stories ORDER BY batch_id, story_id, revision")],
+                "revision_edges": [dict(row) for row in connection.execute(
+                    "SELECT * FROM revision_edges ORDER BY story_id, revision, parent_revision")],
+                "branch_marks": [dict(row) for row in connection.execute(
+                    "SELECT * FROM branch_marks ORDER BY story_id, branch, sequence")],
                 "decisions": [dict(row) for row in connection.execute("SELECT * FROM decisions ORDER BY decision_id")],
                 "adjudications": [dict(row) for row in connection.execute(
                     "SELECT * FROM adjudications ORDER BY adjudication_id")],

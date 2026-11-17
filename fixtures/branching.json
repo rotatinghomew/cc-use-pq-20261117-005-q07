@@ -1,0 +1,204 @@
+{
+  "batches": [
+    {
+      "batch_id": "local-river-base",
+      "stories": [
+        {
+          "story_id": "reed-sisters",
+          "revision": 1,
+          "title": "芦花三姐妹",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 R（初次采录）", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "sis-1", "name": "阿芒", "sibling_order": 1},
+            {"character_id": "sis-2", "name": "阿苇", "sibling_order": 2},
+            {"character_id": "sis-3", "name": "阿荻", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "v1", "sequence": 1, "actor_id": "sis-1", "action": "独自撑船试水", "consequence": "货物被急流卷走", "evidence": "合成记录 R1-1"},
+            {"event_id": "v2", "sequence": 2, "actor_id": "sis-2", "action": "架起独木桥", "consequence": "桥被山洪冲毁", "evidence": "合成记录 R1-2"},
+            {"event_id": "v3", "sequence": 3, "actor_id": "sis-3", "action": "编芦筏载邻人", "consequence": "众人安全过河", "evidence": "合成记录 R1-3"}
+          ]
+        },
+        {
+          "story_id": "reed-sisters",
+          "revision": 2,
+          "title": "芦花三姐妹",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 R（第二次校订）", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "sis-1", "name": "阿芒", "sibling_order": 1},
+            {"character_id": "sis-2", "name": "阿苇", "sibling_order": 2},
+            {"character_id": "sis-3", "name": "阿荻", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "v1", "sequence": 1, "actor_id": "sis-1", "action": "独自撑船试水", "consequence": "货物被急流卷走", "evidence": "合成记录 R2-1"},
+            {"event_id": "v2", "sequence": 2, "actor_id": "sis-2", "action": "架起独木桥", "consequence": "桥被夜雨冲毁", "evidence": "合成记录 R2-2（校订）"},
+            {"event_id": "v3", "sequence": 3, "actor_id": "sis-3", "action": "编芦筏载邻人", "consequence": "众人安全过河", "evidence": "合成记录 R2-3"}
+          ]
+        },
+        {
+          "story_id": "mill-road",
+          "revision": 1,
+          "title": "磨坊路",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 M（初次采录）", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "son-1", "name": "大磨", "sibling_order": 1},
+            {"character_id": "son-2", "name": "二磨", "sibling_order": 2},
+            {"character_id": "son-3", "name": "小磨", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "m1", "sequence": 1, "actor_id": "son-1", "action": "中午走近路运麦", "consequence": "错过市集", "evidence": "合成记录 M1-1"},
+            {"event_id": "m2", "sequence": 2, "actor_id": "son-2", "action": "午后走山路运麦", "consequence": "袋破损失过半", "evidence": "合成记录 M1-2"},
+            {"event_id": "m3", "sequence": 3, "actor_id": "son-3", "action": "黎明沿河运麦", "consequence": "赶上早市", "evidence": "合成记录 M1-3"}
+          ]
+        }
+      ]
+    },
+    {
+      "batch_id": "local-river-variants",
+      "stories": [
+        {
+          "story_id": "reed-sisters",
+          "revision": 3,
+          "branch": "north_variant",
+          "parents": [2],
+          "title": "芦花三姐妹（北岸异本）",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 R-北岸异本", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "sis-1", "name": "阿芒", "sibling_order": 1},
+            {"character_id": "sis-2", "name": "阿苇", "sibling_order": 2},
+            {"character_id": "sis-3", "name": "阿荻", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "v1", "sequence": 1, "actor_id": "sis-1", "action": "独自撑船试水", "consequence": "货物被漩涡卷走", "evidence": "合成记录 R3-1"},
+            {"event_id": "v2", "sequence": 2, "actor_id": "sis-2", "action": "架起独木桥", "consequence": "桥被夜雨冲毁", "evidence": "合成记录 R3-2"},
+            {"event_id": "v3", "sequence": 3, "actor_id": "sis-3", "action": "编芦筏载邻人", "consequence": "众人安全过河", "evidence": "合成记录 R3-3"},
+            {"event_id": "v4", "sequence": 4, "actor_id": "sis-3", "action": "在渡口立碑", "consequence": "北岸人铭记此事", "evidence": "合成记录 R3-4"}
+          ]
+        },
+        {
+          "story_id": "reed-sisters",
+          "revision": 4,
+          "branch": "south_variant",
+          "parents": [2],
+          "title": "芦花三姐妹（南岸异本）",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 R-南岸异本", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "sis-1", "name": "阿芒", "sibling_order": 1},
+            {"character_id": "sis-2", "name": "阿苇", "sibling_order": 2},
+            {"character_id": "sis-3", "name": "阿荻", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "v1", "sequence": 1, "actor_id": "sis-1", "action": "独自撑船试水", "consequence": "货物被急流卷走", "evidence": "合成记录 R4-1"},
+            {"event_id": "v2", "sequence": 2, "actor_id": "sis-2", "action": "架起独木桥", "consequence": "桥被夜雨冲毁", "evidence": "合成记录 R4-2"},
+            {"event_id": "v3", "sequence": 3, "actor_id": "sis-3", "action": "编芦筏载邻人", "consequence": "小妹反被逐出渡口", "evidence": "合成记录 R4-3"}
+          ]
+        },
+        {
+          "story_id": "mill-road",
+          "revision": 2,
+          "title": "磨坊路",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 M（第二次校订）", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "son-1", "name": "大磨", "sibling_order": 1},
+            {"character_id": "son-2", "name": "二磨", "sibling_order": 2},
+            {"character_id": "son-3", "name": "小磨", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "m1", "sequence": 1, "actor_id": "son-1", "action": "中午走近路运麦", "consequence": "错过市集", "evidence": "合成记录 M2-1"},
+            {"event_id": "m2", "sequence": 2, "actor_id": "son-2", "action": "午后走山路运麦", "consequence": "袋破减半", "evidence": "合成记录 M2-2（校订）"},
+            {"event_id": "m3", "sequence": 3, "actor_id": "son-3", "action": "黎明沿河运麦", "consequence": "赶上早市", "evidence": "合成记录 M2-3"}
+          ]
+        }
+      ]
+    },
+    {
+      "batch_id": "local-river-collation",
+      "stories": [
+        {
+          "story_id": "reed-sisters",
+          "revision": 5,
+          "branch": "main",
+          "parents": [3, 4],
+          "title": "芦花三姐妹（汇合校订本）",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 R-汇合校订", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "sis-1", "name": "阿芒", "sibling_order": 1},
+            {"character_id": "sis-2", "name": "阿苇", "sibling_order": 2},
+            {"character_id": "sis-3", "name": "阿荻", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "v1", "sequence": 1, "actor_id": "sis-1", "action": "独自撑船试水", "consequence": "货物被急流卷走", "evidence": "合成记录 R5-1"},
+            {"event_id": "v2", "sequence": 2, "actor_id": "sis-2", "action": "架起独木桥", "consequence": "桥被夜雨冲毁", "evidence": "合成记录 R5-2"},
+            {"event_id": "v3", "sequence": 3, "actor_id": "sis-3", "action": "编芦筏载邻人", "consequence": "众人安全过河（据北岸本校订）", "evidence": "合成记录 R5-3"},
+            {"event_id": "v4", "sequence": 4, "actor_id": "sis-3", "action": "在渡口立碑", "consequence": "北岸人铭记此事", "evidence": "合成记录 R5-4"},
+            {"event_id": "v5", "sequence": 5, "actor_id": "sis-2", "action": "重修石桥", "consequence": "渡口恢复通行", "evidence": "合成记录 R5-5"}
+          ]
+        },
+        {
+          "story_id": "reed-sisters",
+          "revision": 6,
+          "branch": "fragment_variant",
+          "parents": [2],
+          "title": "芦花三姐妹（残卷）",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 R-残卷", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "sis-1", "name": "阿芒", "sibling_order": 1},
+            {"character_id": "sis-2", "name": "阿苇", "sibling_order": 2},
+            {"character_id": "sis-3", "name": "阿荻", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "v1", "sequence": 1, "actor_id": "sis-1", "action": "独自撑船试水", "consequence": "货物被急流卷走", "evidence": "合成记录 R6-1"},
+            {"event_id": "v2", "sequence": 2, "actor_id": "sis-2", "action": "架起独木桥", "consequence": "桥被夜雨冲毁", "evidence": "合成记录 R6-2（残）"}
+          ]
+        },
+        {
+          "story_id": "mill-road",
+          "revision": 3,
+          "title": "磨坊路",
+          "tradition": "river_tales",
+          "source": {"reference": "本地合成样本 M（第三次校订）", "kind": "local_synthetic"},
+          "characters": [
+            {"character_id": "son-1", "name": "大磨", "sibling_order": 1},
+            {"character_id": "son-2", "name": "二磨", "sibling_order": 2},
+            {"character_id": "son-3", "name": "小磨", "sibling_order": 3}
+          ],
+          "events": [
+            {"event_id": "m1", "sequence": 1, "actor_id": "son-1", "action": "中午走近路运麦", "consequence": "错过市集", "evidence": "合成记录 M3-1"},
+            {"event_id": "m2", "sequence": 2, "actor_id": "son-2", "action": "午后走山路运麦", "consequence": "袋破减半", "evidence": "合成记录 M3-2"},
+            {"event_id": "m3", "sequence": 3, "actor_id": "son-3", "action": "黎明沿河运麦", "consequence": "赶上早市", "evidence": "合成记录 M3-3"},
+            {"event_id": "m4", "sequence": 4, "actor_id": "son-3", "action": "合伙修仓", "consequence": "三家共用新仓", "evidence": "合成记录 M3-4"}
+          ]
+        }
+      ]
+    }
+  ],
+  "decisions": [
+    {"decision_id": "d-north-a", "story_id": "reed-sisters", "story_revision": 3, "branch": "north_variant", "annotator": "reader-a", "sequence": 1, "pattern": "parallel", "youngest_outcome": "wins", "evidence_event_ids": ["v1", "v2", "v3"]},
+    {"decision_id": "d-north-b", "story_id": "reed-sisters", "story_revision": 3, "branch": "north_variant", "annotator": "reader-b", "sequence": 1, "pattern": "parallel", "youngest_outcome": "wins", "evidence_event_ids": ["v2", "v3", "v4"]},
+    {"decision_id": "d-south-a", "story_id": "reed-sisters", "story_revision": 4, "branch": "south_variant", "annotator": "reader-a", "sequence": 1, "pattern": "harm", "youngest_outcome": "loses", "evidence_event_ids": ["v3"]},
+    {"decision_id": "d-south-b", "story_id": "reed-sisters", "story_revision": 4, "branch": "south_variant", "annotator": "reader-b", "sequence": 1, "pattern": "harm", "youngest_outcome": "wins", "evidence_event_ids": ["v1", "v3"]},
+    {"decision_id": "d-merge-a", "story_id": "reed-sisters", "story_revision": 5, "annotator": "reader-a", "sequence": 1, "pattern": "parallel", "youngest_outcome": "wins", "evidence_event_ids": ["v1", "v3", "v5"]},
+    {"decision_id": "d-merge-b", "story_id": "reed-sisters", "story_revision": 5, "annotator": "reader-b", "sequence": 1, "pattern": "parallel", "youngest_outcome": "wins", "evidence_event_ids": ["v3", "v4", "v5"]},
+    {"decision_id": "d-frag-a", "story_id": "reed-sisters", "story_revision": 6, "annotator": "reader-a", "sequence": 1, "pattern": "unclear", "youngest_outcome": "unknown", "evidence_event_ids": ["v1"]},
+    {"decision_id": "d-mill-a", "story_id": "mill-road", "story_revision": 3, "annotator": "reader-a", "sequence": 1, "pattern": "parallel", "youngest_outcome": "wins", "evidence_event_ids": ["m1", "m3", "m4"]},
+    {"decision_id": "d-mill-b", "story_id": "mill-road", "story_revision": 3, "annotator": "reader-b", "sequence": 1, "pattern": "parallel", "youngest_outcome": "wins", "evidence_event_ids": ["m2", "m3", "m4"]}
+  ],
+  "adjudications": [
+    {"adjudication_id": "adj-south-outcome", "story_id": "reed-sisters", "story_revision": 4, "branch": "south_variant", "moderator": "editor-1", "sequence": 1, "pattern": "harm", "youngest_outcome": "loses", "evidence_event_ids": ["v3"], "rationale": "南岸异本 v3 记小妹被逐出渡口，读者对结局分歧，依事件文句定为 loses。"}
+  ],
+  "branch_marks": [
+    {"mark_id": "mark-merge-north", "story_id": "reed-sisters", "branch": "north_variant", "sequence": 1, "action": "merged", "target_branch": "main", "merge_revision": 5, "note": "北岸异本已汇入汇合校订本 r5。", "recorded_by": "editor-1"},
+    {"mark_id": "mark-merge-south", "story_id": "reed-sisters", "branch": "south_variant", "sequence": 1, "action": "merged", "target_branch": "main", "merge_revision": 5, "note": "南岸异本已汇入汇合校订本 r5。", "recorded_by": "editor-1"},
+    {"mark_id": "mark-retire-fragment", "story_id": "reed-sisters", "branch": "fragment_variant", "sequence": 1, "action": "retired", "note": "残卷来源无法核实，不再采用；结构记录保留备查。", "recorded_by": "editor-1"}
+  ],
+  "tradition": null,
+  "minimum_reviewers": 2
+}
